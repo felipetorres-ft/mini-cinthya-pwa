@@ -11,9 +11,11 @@ body {
     font-family: Arial, sans-serif;
     background: #f7f2ed;
     color:#554c45;
+}
+.container { 
+    padding:20px;
     text-align:center;
 }
-.container { padding:20px; }
 button {
     background:#d8bfa8;
     border:none;
@@ -23,12 +25,59 @@ button {
     font-size:18px;
     cursor:pointer;
 }
-</style>
-<script>
-function startChat(){
-    window.location.href = 'https://chatgpt.com/g/g-6921ffc9440c81918202646fe6642489-mini-cinthya';
+button:hover {
+    background:#c9ae97;
 }
-</script>
+#intro {
+    display:block;
+}
+#chatContainer {
+    display:none;
+    max-width:800px;
+    margin:0 auto;
+    height:100vh;
+    flex-direction:column;
+}
+#messages {
+    flex:1;
+    overflow-y:auto;
+    padding:20px;
+    background:#fff;
+}
+.message {
+    margin:10px 0;
+    padding:10px 15px;
+    border-radius:10px;
+    max-width:70%;
+}
+.message.user {
+    background:#d8bfa8;
+    color:#fff;
+    margin-left:auto;
+    text-align:right;
+}
+.message.assistant {
+    background:#e8e8e8;
+    color:#554c45;
+}
+#inputContainer {
+    display:flex;
+    padding:15px;
+    background:#fff;
+    border-top:1px solid #ddd;
+}
+#userInput {
+    flex:1;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    font-size:16px;
+}
+#sendBtn {
+    margin-left:10px;
+    padding:12px 25px;
+}
+</style>
 </head>
 <body>
 <div id="intro" class="container">
@@ -39,5 +88,89 @@ function startChat(){
     <p>Beleza é regeneração, não exagero.</p>
     <button onclick="startChat()">Iniciar Conversa</button>
 </div>
+
+<div id="chatContainer">
+    <div id="messages"></div>
+    <div id="inputContainer">
+        <input id="userInput" type="text" placeholder="Escreva sua mensagem..." onkeypress="handleKeyPress(event)">
+        <button id="sendBtn" onclick="handleSend()">Enviar</button>
+    </div>
+</div>
+
+<script>
+let chatHistory = [];
+
+function startChat() {
+    document.getElementById('intro').style.display = 'none';
+    document.getElementById('chatContainer').style.display = 'flex';
+    displayMessage('assistant', 'Olá! Sou a Mini Cinthya, assistente virtual da Dra. Cinthya Coltro. Como posso ajudá-lo hoje?');
+}
+
+function displayMessage(role, content) {
+    const messagesDiv = document.getElementById('messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${role}`;
+    messageDiv.textContent = content;
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        handleSend();
+    }
+}
+
+async function handleSend() {
+    const input = document.getElementById('userInput');
+    const msg = input.value.trim();
+    
+    if (!msg) return;
+    
+    // Exibir mensagem do usuário
+    displayMessage('user', msg);
+    input.value = '';
+    
+    // Adicionar ao histórico
+    chatHistory.push({ role: 'user', content: msg });
+    
+    // Desabilitar botão durante envio
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Enviando...';
+    
+    try {
+        // Enviar para backend FT9
+        const res = await fetch('https://ft9-intelligence-backend-production.up.railway.app/mini-cinthya/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: msg,
+                history: chatHistory
+            })
+        });
+        
+        if (!res.ok) {
+            throw new Error(`Erro HTTP: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        
+        // Exibir resposta da Mini Cinthya
+        displayMessage('assistant', data.response);
+        
+        // Adicionar resposta ao histórico
+        chatHistory.push({ role: 'assistant', content: data.response });
+        
+    } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
+        displayMessage('assistant', 'Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.');
+    } finally {
+        // Reabilitar botão
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Enviar';
+    }
+}
+</script>
 </body>
 </html>
