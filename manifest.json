@@ -1,0 +1,9 @@
+{
+  "name": "Mini Cinthya - Assistente Virtual",
+  "short_name": "MiniCinthya",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f7f2ed",
+  "description": "Assistente Virtual da Dra. Cinthya Coltro",
+  "icons": []
+}
